@@ -1,0 +1,333 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-audio",
+        "options": {
+          "binaryData": true
+        }
+      },
+      "id": "b42e90d9-c6ec-4e97-b8d4-5268904329d3",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        540,
+        -20
+      ],
+      "webhookId": "337f6cee-e518-40df-8fa4-0a7e155c6257"
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "content": "=I want you to summarize the following:\n{{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "be275960-0e55-41ec-9a56-102bd00e13b0",
+      "name": "Summarize",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        -160
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "model",
+              "value": "whisper-1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0101bbf7-0e7f-4c68-9afd-d73daa9edd4a",
+      "name": "Whisper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        760,
+        -20
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "content": "=Task\nI want you to analyze the following transcription for emotional sentiment. \n\nOutput\nYour output should be a list of all the emotions and their probabilities of being present in the transcript. The output should be in json. It should be a list of emotions. Every json emotion object should have:\n- a field for name of the emotion, called \"emotion\"\n- a field for called \"observation\", where you repeat and summarize the part of the transcript where this is based on.\n- a field for called \"motivation\", where you describe why that observation is showing signs of that emotion.\n- a field called \"probability\" where you give a 0 to 100 decimal value that describes the likelyhood of that emotion to be actually present there\n\nInput\n{{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "54f4accf-0594-44ad-a362-f936de2ea024",
+      "name": "Emotions",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        40
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4",
+        "prompt": {
+          "messages": [
+            {
+              "content": "=Task\nChatGPT will generate 3 prompts based on the input provided at the bottom of this message. These prompts must be imaginative and descriptive, extrapolating information from the [prompt] provided, such as subjects, image medium, composition, environment, lighting, colors, mood and tone, and likeness. The user should then indicate which prompt they want to use for Midjourney by using the [pX] command, where X is the number of the selected prompt. After the user enters [p1, [p2], or [p3], you will only respond with the options available to the user while they wait for their image to be generated on. midjourney.\n\n\nWhen you provide options for the user's next steps, do so in list form. Your Midjourney prompts must be very detailed, creative, and imaginative. Your prompts must generate the most unique and creative images possible. Please note that this prompt is highly specific and detailed.\n\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5df37b93-e819-47dd-a5cd-e8a9ab0ca142",
+      "name": "Midjourney Prompt king",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        140
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "content": "=Task\nI want you to create a list of visually descriptive associations based on the emotions and the original transcript.\n\nExpression role\nI want you to pretend like you are an award winning artist that is using very visually rich language.\n\nInput Emotions \n{{ $json.message.content }}\n\nInput Transcript\n{{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "35053081-6ee1-4cae-a117-0f5d5ae7de60",
+      "name": "Emotional Associations",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        40
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "content": "=I want you to format this into legal json:\n{{ $json.message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "849daa29-6c60-4079-9630-bf89530ea53a",
+      "name": "Json validator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        40
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4",
+        "prompt": {
+          "messages": [
+            {
+              "content": "=Task\nI want you to analyze the following transcription for insights. Insights should lead to wisdom: an integrated recognition of what is happening in a clear way. Insight, often referred to as an “aha moment,” have been defined as a sudden, conscious change in a person's representation of a stimulus, situation, event, or problem. In such a way that it can lead to a paradigm shift.\n\nRole\nI want you to take on the role and use the language of a wise old teacher, shaman, non-dual teacher, psychologist and a master story teller. The role is capable of taking the author of the original transcript to recognizing the wisdom in what they were sharing and have a high likely hood to a moment of insight or an \"aha moment\".\n\nLanguage constraints\nI want you to express yourself as the role described before. \n\nOutput\nYour output should be a list of all the insights and their probabilities of being present in the transcript. The output should be in json. It should be a list of insights. Every json emotion object should have:\n- a field describing the insight briefly called \"insight\"\n- a field called \"story\" describing the essence of the insight which leads to the recognition of the wisdom and insight.\n- a field for called \"observation\", where you repeat and summarize the part of the transcript where this is based on.\n- a field for called \"motivation\", where you describe why that observation is showing signs of that insight.\n- a field called \"probability\" where you give a 0 to 100 decimal value that describes the likelyhood of that insight to be actually present there and lead to a aha moment after hearing the story.\n\nInput\n{{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "167708c4-433b-4ffe-9d6d-568ee6fdf54c",
+      "name": "Insight",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        240
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "content": "=I want you to format this into legal json:\n{{ $json.message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "db12ecfb-7e60-4f13-9226-1b40986283dc",
+      "name": "Json validator1",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        240
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Whisper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Whisper": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Emotions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insight",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Emotions": {
+      "main": [
+        [
+          {
+            "node": "Json validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Json validator": {
+      "main": [
+        [
+          {
+            "node": "Emotional Associations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Emotional Associations": {
+      "main": [
+        []
+      ]
+    },
+    "Insight": {
+      "main": [
+        [
+          {
+            "node": "Json validator1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "a11e0ac1-fdd7-4298-9d1a-39ba038b47a0",
+  "id": "1",
+  "meta": {
+    "instanceId": "7dd71b39956e63d8ad1348ef521b7a03fb04d0ac892bd3f072606f7db20ed1da"
+  },
+  "tags": []
+}
